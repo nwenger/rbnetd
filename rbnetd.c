@@ -10,13 +10,22 @@
 //#include <sys/ioctl.h>
 //#include <net/if.h>
 
-int scan_intf(char *intf, wireless_scan *result)
+//TODO next steps
+//confirm I can get a list of network names
+//confirm I can connect to a network
+//connect to a network using WPA2
+//either use DHCP or manually acquire an IP address
+//write function to connect via ethernet
+
+//add flags for:
+//IPv4 vs IPv6
+//specify an interface to use
+
+
+int scan_intf(int sockd, char *intf, wireless_scan *result)
 {
     wireless_scan_head head;
     iwrange range;
-    int sockd;
-
-    sockd = iw_sockets_open();
 
     if (iw_get_range_info(sockd, intf, &range) < 0) {
         printf("Error during iw_get_range_info\n");
@@ -34,7 +43,7 @@ int scan_intf(char *intf, wireless_scan *result)
 
 int main(int argc, char *argv[])
 {
-
+    int sockd;
     int inet_type = AF_INET; //IPv4, not 6
     struct ifaddrs *intfs;
     wireless_scan *scan_result;
@@ -51,8 +60,13 @@ int main(int argc, char *argv[])
         }
         intfs = intfs->ifa_next;
     }
-
-    int rv = scan_intf(intfs->ifa_name, scan_result);
+    
+    //TODO safety checks to ensure current intfs node is what we want to use
+    // exit otherwise
+    
+    sockd = iw_sockets_open();
+    
+    int rv = scan_intf(sockd, intfs->ifa_name, scan_result);
     if (!rv) {
         printf("Scan of interface %s failed\n", intfs->ifa_name);
         exit(rv);
@@ -63,5 +77,13 @@ int main(int argc, char *argv[])
         scan_result = scan_result->next;
     }
     freeifaddrs(intfs);
+    /*
+    if (scan_result->has_ap_addr) {
+        if (connect(sockfd, scan_result->ap_addr, sizeof(scan_result->ap_addr)) < 0) {
+            printf("Connect to network:%s failed\n", scan_result->b.essid);
+            exit(3);
+        }
+    }
+    */
     return 0;
 }
