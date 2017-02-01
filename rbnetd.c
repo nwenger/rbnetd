@@ -62,5 +62,6 @@ int main(int argc, char *argv[])
         printf("%s\n", scan_result->b.essid);
         scan_result = scan_result->next;
     }
+    freeifaddrs(intfs);
     return 0;
 }
