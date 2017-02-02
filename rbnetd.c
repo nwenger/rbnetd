@@ -22,9 +22,10 @@
 //specify an interface to use
 
 
-int scan_intf(int sockd, char *intf, wireless_scan *result)
+//XXX this only gets networks i'm connected to
+//...not really what i want at all
+int scan_intf(int sockd, char *intf, wireless_scan_head *head)
 {
-    wireless_scan_head head;
     iwrange range;
 
     if (iw_get_range_info(sockd, intf, &range) < 0) {
@@ -32,12 +33,11 @@ int scan_intf(int sockd, char *intf, wireless_scan *result)
         return 2;
     }
 
-    if (iw_scan(sockd, intf, range.we_version_compiled, &head) < 0) {
+    if (iw_scan(sockd, intf, range.we_version_compiled, head) < 0) {
         printf("Error during iw_scan\n");
         return 2;
     }
 
-    result = head.result;
     return 0;
 }
 
@@ -46,6 +46,7 @@ int main(int argc, char *argv[])
     int sockd;
     int inet_type = AF_INET; //IPv4, not 6
     struct ifaddrs *intfs;
+    wireless_scan_head *scan_head = (wireless_scan_head*)malloc(sizeof(wireless_scan_head*));
     wireless_scan *scan_result;
 
     if (getifaddrs(&intfs) < 0) {
@@ -60,23 +61,26 @@ int main(int argc, char *argv[])
         }
         intfs = intfs->ifa_next;
     }
-    
+
     //TODO safety checks to ensure current intfs node is what we want to use
     // exit otherwise
-    
+
     sockd = iw_sockets_open();
-    
-    int rv = scan_intf(sockd, intfs->ifa_name, scan_result);
-    if (!rv) {
+
+    printf("Scanning interface %s\n", intfs->ifa_name);
+    int rv = scan_intf(sockd, intfs->ifa_name, scan_head);
+    if (rv) {
         printf("Scan of interface %s failed\n", intfs->ifa_name);
         exit(rv);
     }
+    scan_result = scan_head->result;
+
     while(scan_result != NULL)
     {
         printf("%s\n", scan_result->b.essid);
         scan_result = scan_result->next;
     }
-    freeifaddrs(intfs);
+    //freeifaddrs(intfs); //segfault
     /*
     if (scan_result->has_ap_addr) {
         if (connect(sockfd, scan_result->ap_addr, sizeof(scan_result->ap_addr)) < 0) {
