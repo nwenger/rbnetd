@@ -10,6 +10,9 @@
 //#include <sys/ioctl.h>
 //#include <net/if.h>
 
+//https://stackoverflow.com/questions/5858655/linux-programmatically-up-down-an-interface-kernel
+//bring interface up
+
 //TODO next steps
 //confirm I can get a list of network names
 //confirm I can connect to a network
