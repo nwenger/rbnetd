@@ -49,8 +49,8 @@ int scan_intf(int sockd, char *intf, wireless_scan_head *head)
     return 0;
 }
 
-//FIXME this function sucks
-int get_net(int sockd, struct ifaddrs *intfs, wireless_scan_head *scan_head, wireless_scan* result, char *str)
+//FIXME this function (probably still) sucks
+int get_net(int sockd, struct ifaddrs *intfs, wireless_scan_head *scan_head, wireless_scan** result, char *str)
 {
     int search = strcmp("",str);
     printf("Scanning interface %s\n", intfs->ifa_name);
@@ -59,15 +59,15 @@ int get_net(int sockd, struct ifaddrs *intfs, wireless_scan_head *scan_head, wir
         printf("Scan of interface %s failed\n", intfs->ifa_name);
         return rv;
     }
-    result = scan_head->result;
+    *result = scan_head->result;
 
-    while(result != NULL)
+    while(*result != NULL)
     {
         if(!search)
-            printf("%s\n", result->b.essid);
-        else if(!strcmp(str,result->b.essid)) //need to set scan_result
+            printf("%s\n", (*result)->b.essid);
+        else if(!strcmp(str,(*result)->b.essid)) //need to set scan_result
             return 0;
-        result = result->next;
+        *result = (*result)->next;
     }
     return 0;
 }
@@ -95,10 +95,12 @@ int main(int argc, char *argv[])
     }
     //TODO safety checks to ensure current intfs node is what we want to use
 
-    if(get_net(sockd,intfs,scan_head,scan_result,"Leps")) //FIXME hardcoded
+    if(get_net(sockd,intfs,scan_head,&scan_result,"Leps")) //FIXME hardcoded
     {
         printf("FAILED TO LIST NETWORKS\n");
         return 2;
+    } else {
+        printf("Found network\n");
     }
 
     if (scan_result->has_ap_addr) {
